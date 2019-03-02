@@ -11,6 +11,7 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "CircularBuffer.h"
 
 //==============================================================================
 /**
@@ -57,5 +58,7 @@ public:
 
 private:
     //==============================================================================
+    AudioProcessorValueTreeState mParameters;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DelayAudioProcessor)
 };
