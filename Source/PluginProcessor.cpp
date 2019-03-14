@@ -21,7 +21,8 @@ DelayAudioProcessor::DelayAudioProcessor()
                       #endif
                        .withOutput ("Output", AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ),
+	  mState(*this, nullptr)
 #endif
 {
 }
