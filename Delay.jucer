@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="X2HUXV" name="Delay" projectType="audioplug" jucerVersion="5.4.3">
+<JUCERPROJECT id="X2HUXV" name="Delay" projectType="audioplug" jucerVersion="5.4.3"
+              pluginFormats="buildStandalone,buildVST">
   <MAINGROUP id="WxDnsk" name="Delay">
     <GROUP id="{92A7FE45-484E-8F59-C2DD-20637429273A}" name="Source">
       <FILE id="ut5AJF" name="PluginProcessor.cpp" compile="1" resource="0"

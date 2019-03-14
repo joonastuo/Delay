@@ -11,8 +11,6 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "CircularBuffer.h"
-#include <vector>
 
 class DelayEffect
 {
@@ -21,12 +19,21 @@ public:
 	~DelayEffect();
 	void prepare(dsp::ProcessSpec spec);
 	void reset();
-	void process(dsp::ProcessContextReplacing<float> context);
+	void process(AudioBuffer<float>& buffer);
 private:
+	// Methods
+	void fillDelayBuffer(const float* input, const int channel, float startGain, float endGain);
+
+
+	// Variables
 	AudioProcessorValueTreeState& mState;
 
-	std::vector<std::unique_ptr<circular_buffer<float>>> mDelayBuffer;
+	AudioBuffer<float> mDelayBuffer;
+	int mWritePos = 0;
+	float mLastInputGain = 0.f;
 	double mSampleRate = 44100.f;
 	int mSamplesPerBlock = 512;
+	int mDelayBufferLen = 0;
+	int mNumChannels = 2;
 
 };

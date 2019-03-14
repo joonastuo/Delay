@@ -11,6 +11,7 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "Delay.h"
 
 //==============================================================================
 /**
@@ -57,6 +58,7 @@ public:
 
 private:
 	AudioProcessorValueTreeState mState;
+	DelayEffect mDelay;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DelayAudioProcessor)

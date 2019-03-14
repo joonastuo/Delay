@@ -74,7 +74,6 @@ public:
 		for (auto i = 0; i < mMaxSize; ++i)
 		{
 			buffer[i] = mBuffer[(j + i) % mMaxSize];
-
 		}
 
 		return;

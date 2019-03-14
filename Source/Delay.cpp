@@ -10,47 +10,84 @@
 
 #include "Delay.h"
 
+//==============================================================================
 DelayEffect::DelayEffect(AudioProcessorValueTreeState& state)
 	: mState(state)
 {
 	// Empty constructor
 }
 
+//==============================================================================
 DelayEffect::~DelayEffect()
 {
 	// Emtyp destructor
 }
 
+//==============================================================================
 void DelayEffect::prepare(dsp::ProcessSpec spec)
 {
 	mSampleRate = spec.sampleRate;
 	mSamplesPerBlock = spec.maximumBlockSize;
-	const int numChannels = spec.numChannels;
-
-	for (auto channel = 0; channel < numChannels; ++channel)
-	{
-		mDelayBuffer.push_back(
-			std::unique_ptr<circular_buffer<float>>(new circular_buffer<float>(2 * (mSampleRate + mSamplesPerBlock))));
-	}
+	mNumChannels = spec.numChannels;
+	mDelayBufferLen = 2 * (mSampleRate + mSamplesPerBlock);
+	mDelayBuffer.setSize(mNumChannels, mDelayBufferLen, false, true);
+	mDelayBuffer.clear();
 }
 
+//==============================================================================
 void DelayEffect::reset()
 {
 	// Empty reset function
 }
 
-void DelayEffect::process(dsp::ProcessContextReplacing<float> context)
+//==============================================================================
+void DelayEffect::process(AudioBuffer<float>& buffer)
 {
-	dsp::AudioBlock<float> inputBlock = context.getInputBlock();
+	float gain = 0.5f;
+	float time = 1000.f;
 
-	// Read input buffer into delay buffer
-	for (auto channel = 0; channel < inputBlock.getNumChannels(); ++channel)
+	for (auto channel = 0; channel < mNumChannels; ++channel)
 	{
-		const float* input = inputBlock.getChannelPointer(channel);
-		for (auto sample = 0; sample < inputBlock.getNumSamples(); ++sample)
+		const float* input = buffer.getReadPointer(channel);
+		fillDelayBuffer(input, channel, mLastInputGain, gain);
+	}
+	mLastInputGain = gain;
+
+	const int64 readPos = static_cast<int64> (mDelayBufferLen + mWritePos - (mSampleRate * time / 1000.0)) % mDelayBufferLen;
+
+	for (auto channel = 0; channel < mNumChannels; ++channel)
+	{
+		if (mDelayBufferLen > readPos + mSamplesPerBlock)
 		{
-			mDelayBuffer[channel]->put(input[sample]);
+			buffer.addFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readPos), mSamplesPerBlock);
+		}
+		else
+		{
+			const int64 midPos = mDelayBufferLen - readPos;
+			buffer.addFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readPos), midPos);
+			buffer.addFrom(channel, midPos, mDelayBuffer.getReadPointer(channel), mSamplesPerBlock - midPos);
 		}
 	}
 
+	mWritePos += mSamplesPerBlock;
+	mWritePos %= mDelayBufferLen;
+}
+
+//==============================================================================
+// Write input buffer to delay buffer
+//
+void DelayEffect::fillDelayBuffer(const float* input, const int channel, float startGain, float endGain)
+{
+	const float* delayInput = mDelayBuffer.getReadPointer(channel);
+
+	if (mDelayBufferLen > mSamplesPerBlock + mWritePos)
+	{
+		mDelayBuffer.copyFromWithRamp(channel, mWritePos, input, mSamplesPerBlock, startGain, endGain);
+	}
+	else
+	{
+		const int midPos = mDelayBufferLen - mWritePos;
+		mDelayBuffer.copyFromWithRamp(channel, mWritePos, input, midPos, startGain, endGain);
+		mDelayBuffer.copyFromWithRamp(channel, 0, input, mSamplesPerBlock - midPos, startGain, endGain);
+	}
 }
