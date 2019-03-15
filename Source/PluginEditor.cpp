@@ -13,11 +13,12 @@
 
 //==============================================================================
 DelayAudioProcessorEditor::DelayAudioProcessorEditor (DelayAudioProcessor& p)
-    : AudioProcessorEditor (&p), processor (p)
+    : AudioProcessorEditor (&p), 
+	  processor (p),
+	  mState(p.getState())
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize (400, 300);
+    setSize (200, 200);
+	initialiseGUI();
 }
 
 DelayAudioProcessorEditor::~DelayAudioProcessorEditor()
@@ -29,14 +30,25 @@ void DelayAudioProcessorEditor::paint (Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
-
-    g.setColour (Colours::white);
-    g.setFont (15.0f);
-    g.drawFittedText ("Hello World!", getLocalBounds(), Justification::centred, 1);
 }
 
 void DelayAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
+	FlexBox masterBox;
+	masterBox.alignContent = FlexBox::AlignContent::center;
+	masterBox.justifyContent = FlexBox::JustifyContent::center;
+	masterBox.flexDirection = FlexBox::Direction::column;
+	masterBox.items.addArray({
+								FlexItem(mTimeSlider).withWidth(100.f).withHeight(100.f)
+							 });
+	masterBox.performLayout(getLocalBounds().toFloat());
+}
+
+void DelayAudioProcessorEditor::initialiseGUI()
+{
+	mTimeSlider.setSliderStyle(Slider::SliderStyle::Rotary);
+	mTimeSlider.setSize(100, 100);
+	mTimeSlider.setTextBoxStyle(Slider::TextBoxBelow, true, 100.f, 20.f);
+	mTimeSliderAttachment.reset(new SliderAttachment(mState, "time", mTimeSlider));
+	addAndMakeVisible(mTimeSlider);
 }

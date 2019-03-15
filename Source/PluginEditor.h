@@ -25,11 +25,18 @@ public:
     //==============================================================================
     void paint (Graphics&) override;
     void resized() override;
+	void initialiseGUI();
 
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     DelayAudioProcessor& processor;
+	AudioProcessorValueTreeState& mState;
+
+	typedef AudioProcessorValueTreeState::SliderAttachment SliderAttachment;
+	
+	Slider mTimeSlider;
+	std::unique_ptr<SliderAttachment> mTimeSliderAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DelayAudioProcessorEditor)
 };

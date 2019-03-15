@@ -22,11 +22,18 @@ DelayAudioProcessor::DelayAudioProcessor()
                        .withOutput ("Output", AudioChannelSet::stereo(), true)
                      #endif
                        ),
-	  mState(*this, nullptr),
+	  mState(*this, nullptr, Identifier ("DelayPlugin"),
+		  {
+				std::make_unique<AudioParameterFloat> ("time",
+													   "Time",
+													   0.0,
+													   2000.0,
+													   500.0)
+		  }),
 	  mDelay(mState)
 #endif
 {
-	mState.state = ValueTree("PluginParameters");
+	// Empty constructor
 }
 
 DelayAudioProcessor::~DelayAudioProcessor()
@@ -171,6 +178,11 @@ void DelayAudioProcessor::setStateInformation (const void* data, int sizeInBytes
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+}
+
+AudioProcessorValueTreeState & DelayAudioProcessor::getState()
+{
+	return mState;
 }
 
 //==============================================================================

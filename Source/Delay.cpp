@@ -44,7 +44,7 @@ void DelayEffect::reset()
 void DelayEffect::process(AudioBuffer<float>& buffer)
 {
 	float gain = 0.5f;
-	float time = 1000.f;
+	float time = *mState.getRawParameterValue("time");
 
 	for (auto channel = 0; channel < mNumChannels; ++channel)
 	{
@@ -87,7 +87,8 @@ void DelayEffect::fillDelayBuffer(const float* input, const int channel, float s
 	else
 	{
 		const int midPos = mDelayBufferLen - mWritePos;
-		mDelayBuffer.copyFromWithRamp(channel, mWritePos, input, midPos, startGain, endGain);
-		mDelayBuffer.copyFromWithRamp(channel, 0, input, mSamplesPerBlock - midPos, startGain, endGain);
+		const float midGain = mLastInputGain + ((startGain - endGain) / mSamplesPerBlock) * (midPos / mSamplesPerBlock);
+		mDelayBuffer.copyFromWithRamp(channel, mWritePos, input, midPos, startGain, midGain);
+		mDelayBuffer.copyFromWithRamp(channel, 0, input, mSamplesPerBlock - midPos, midGain, endGain);
 	}
 }

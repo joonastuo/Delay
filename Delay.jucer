@@ -16,8 +16,6 @@
         <FILE id="JRRsKy" name="Delay.h" compile="0" resource="0" file="Source/Delay.h"/>
       </GROUP>
       <GROUP id="{EFC50161-F36D-5A47-CAEB-47FABDCFEC9A}" name="Helper">
-        <FILE id="mjMoMv" name="CircularBuffer.h" compile="0" resource="0"
-              file="Source/CircularBuffer.h"/>
         <FILE id="XWyHQ6" name="Identifiers.h" compile="0" resource="0" file="Source/Identifiers.h"/>
       </GROUP>
     </GROUP>
