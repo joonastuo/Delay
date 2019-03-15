@@ -22,7 +22,9 @@ public:
 	void process(AudioBuffer<float>& buffer);
 private:
 	// Methods
-	void fillDelayBuffer(const float* input, const int channel, float startGain, float endGain);
+	void fillDelayBuffer(AudioBuffer<float>& buffer, const int& channel, float& startGain, float& endGain);
+	void copyFromDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const int64& readPos);
+	void feedbackDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const float& startGain, const float& endGain);
 
 
 	// Variables
@@ -31,6 +33,7 @@ private:
 	AudioBuffer<float> mDelayBuffer;
 	int mWritePos = 0;
 	float mLastInputGain = 0.f;
+	float mLastFeedbackGain = 0.f;
 	double mSampleRate = 44100.f;
 	int mSamplesPerBlock = 512;
 	int mDelayBufferLen = 0;
