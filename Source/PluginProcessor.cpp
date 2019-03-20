@@ -28,7 +28,22 @@ DelayAudioProcessor::DelayAudioProcessor()
 													   "Time",
 													   0.0,
 													   2000.0,
-													   500.0)
+													   500.0),
+				std::make_unique<AudioParameterFloat> ("BL",
+													   "BL",
+													   0.0,
+													   2.0,
+													   0.1),
+				std::make_unique<AudioParameterFloat> ("FF",
+													   "FF",
+													   0.0,
+													   100.0,
+													   100.0),
+				std::make_unique<AudioParameterFloat> ("FB",
+													   "FB",
+													   -100.0,
+													   100.0,
+													   0.0)
 		  }),
 	  mDelay(mState)
 #endif

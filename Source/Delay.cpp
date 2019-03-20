@@ -32,6 +32,8 @@ void DelayEffect::prepare(dsp::ProcessSpec spec)
 	mDelayBufferLen = 2 * (mSampleRate + mSamplesPerBlock);
 	mDelayBuffer.setSize(mNumChannels, mDelayBufferLen, false, true);
 	mDelayBuffer.clear();
+	mDryBuffer.setSize(mNumChannels, mDelayBufferLen);
+	mDryBuffer.clear();
 }
 
 //==============================================================================
@@ -43,85 +45,109 @@ void DelayEffect::reset()
 //==============================================================================
 void DelayEffect::process(AudioBuffer<float>& buffer)
 {
-	float gain = 0.5f;
-	float feedback = 0.5f;
-	float time = *mState.getRawParameterValue("time");
+	float feedback = *mState.getRawParameterValue("FB");
+	float wet	   = *mState.getRawParameterValue("FF");
+	float time	   = *mState.getRawParameterValue("time");
+
+	float FB = feedback / 100.f;
+	float W  = wet / 100.f;
+	float G  = 1 - W;
+
+	// Copy input buffer to dry buffer
+	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
+	{
+		mDryBuffer.copyFromWithRamp(channel, 0, buffer.getReadPointer(channel), buffer.getNumSamples(), mLastG, G);
+	}
+	mLastG = G;
 
 	// Write input buffer to delay buffer
-	for (auto channel = 0; channel < mNumChannels; ++channel)
+	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
 	{
-		fillDelayBuffer(buffer, channel, mLastInputGain, gain);
-	}
-	mLastInputGain = gain;
-
-	const int64 readPos = static_cast<int64> (mDelayBufferLen + mWritePos - (mSampleRate * time / 1000.0)) % mDelayBufferLen;
-
-	// Copy mSamplesPerBlock samples from delay buffer (readPos) to output buffer
-	for (auto channel = 0; channel < mNumChannels; ++channel)
-	{
-		copyFromDelayBuffer(buffer, channel, readPos);
+		fillDelayBuffer(buffer, channel);
 	}
 
-	// Add feedback to delay buffer
+	// delay index
+	int readIndex = mWriteIndex - static_cast<int> (time * (mSampleRate / 1000.f));
+	if (readIndex < 0)
+		readIndex += mDelayBufferLen;
+
+	// Add delay into buffer
+	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
+	{
+		copyFromDelayBuffer(buffer, channel, readIndex);
+	}
+
+	// Add feedback form output buffer to delay buffer with gain FB
 	for (auto channel = 0; channel < mNumChannels; ++channel)
 	{
-		feedbackDelayBuffer(buffer, channel, mLastFeedbackGain, feedback);
+		feedbackDelayBuffer(buffer, channel, mLastFB, FB);
 	}
-	mLastFeedbackGain = feedback;
+	mLastFB = FB;
 
-	mWritePos += mSamplesPerBlock;
-	mWritePos %= mDelayBufferLen;
+	// Dry/wet
+	buffer.applyGainRamp(0, buffer.getNumSamples(), mLastW, W);
+	mLastW = W;
+
+	// Add dry buffer to wet buffer
+	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
+	{
+		buffer.addFrom(channel, 0, mDryBuffer.getReadPointer(channel), buffer.getNumSamples());
+	}
+
+	// Advance delay buffer index
+	mWriteIndex += buffer.getNumSamples();
+	mWriteIndex %= mDelayBufferLen;
 }
 
 //==============================================================================
 // Write input buffer to delay buffer
 //
-void DelayEffect::fillDelayBuffer(AudioBuffer<float>& buffer, const int& channel, float& startGain, float& endGain)
+void DelayEffect::fillDelayBuffer(AudioBuffer<float>& buffer, const int& channel)
 {
-	if (mDelayBufferLen > mSamplesPerBlock + mWritePos)
+	if (mWriteIndex + buffer.getNumSamples() <= mDelayBufferLen)
 	{
-		mDelayBuffer.copyFromWithRamp(channel, mWritePos, buffer.getReadPointer(channel), mSamplesPerBlock, startGain, endGain);
+		mDelayBuffer.copyFrom(channel, mWriteIndex, buffer.getReadPointer(channel), buffer.getNumSamples());
 	}
 	else
 	{
-		const int midPos = mDelayBufferLen - mWritePos;
-		const float midGain = mLastInputGain + ((endGain - startGain) / mSamplesPerBlock) * (midPos / mSamplesPerBlock);
-		mDelayBuffer.copyFromWithRamp(channel, mWritePos, buffer.getReadPointer(channel), midPos, startGain, midGain);
-		mDelayBuffer.copyFromWithRamp(channel, 0, buffer.getReadPointer(channel), mSamplesPerBlock - midPos, midGain, endGain);
+		// Samples remaining at the end of the delay buffer
+		const int samplesRemaining = mDelayBufferLen - mWriteIndex;
+		mDelayBuffer.copyFrom(channel, mWriteIndex, buffer.getReadPointer(channel), samplesRemaining);
+		mDelayBuffer.copyFrom(channel, 0, buffer.getReadPointer(channel, samplesRemaining), buffer.getNumSamples() - samplesRemaining);
 	}
 }
 
 //==============================================================================
-// Copy mSamplesPerBlock samples from position readPos to output buffer
-//
-void DelayEffect::copyFromDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const int64& readPos)
+void DelayEffect::copyFromDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const int& readIndex)
 {
-		if (mDelayBufferLen > readPos + mSamplesPerBlock)
+		if (readIndex + buffer.getNumSamples() <= mDelayBufferLen)
 		{
-			buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel) + readPos, mSamplesPerBlock);
+			buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), buffer.getNumSamples());
 		}
 		else
 		{
-			const int64 midPos = mDelayBufferLen - readPos;
-			buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel) + readPos, midPos);
-			buffer.copyFrom(channel, midPos, mDelayBuffer.getReadPointer(channel), mSamplesPerBlock - midPos);
+			// Samples remaining at the end of the delay buffer
+			const int samplesRemaining = mDelayBufferLen - readIndex;
+			buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), samplesRemaining);
+			buffer.copyFrom(channel, samplesRemaining, mDelayBuffer.getReadPointer(channel), buffer.getNumSamples() - samplesRemaining);
 		}
 }
 
 //==============================================================================
-// Add feedbakc to delay buffer
+// Add feedback to delay buffer
 //
 void DelayEffect::feedbackDelayBuffer(AudioBuffer<float>& buffer, const int & channel, const float & startGain, const float & endGain)
 {
-		if (mDelayBufferLen > mSamplesPerBlock + mWritePos)
+		if (mWriteIndex + buffer.getNumSamples() <= mDelayBufferLen)
 		{
-			mDelayBuffer.addFromWithRamp(channel, mWritePos, buffer.getWritePointer(channel), mSamplesPerBlock, startGain, endGain);
+			mDelayBuffer.addFromWithRamp(channel, mWriteIndex, buffer.getWritePointer(channel), buffer.getNumSamples(), startGain, endGain);
 		}
 		else
 		{
-			const int64 midPos = mDelayBufferLen - mWritePos;
-			const float midGain = mLastFeedbackGain + ((endGain - startGain) / mSamplesPerBlock) * (midPos / mSamplesPerBlock);
-			mDelayBuffer.addFromWithRamp(channel, mWritePos, buffer.getWritePointer(channel), midPos, startGain, midGain);
-			mDelayBuffer.addFromWithRamp(channel, 0, buffer.getWritePointer(channel), mSamplesPerBlock - midPos, midGain, endGain);
+			// Samples remaining at the end of the delay buffer
+			const int samplesRemaining = mDelayBufferLen - mWriteIndex;
+			const float midGain = mLastFB + ((endGain - startGain) / mSamplesPerBlock) * (samplesRemaining / mSamplesPerBlock);
+			mDelayBuffer.addFromWithRamp(channel, mWriteIndex, buffer.getWritePointer(channel), samplesRemaining, startGain, midGain);
+			mDelayBuffer.addFromWithRamp(channel, 0, buffer.getWritePointer(channel, samplesRemaining), buffer.getNumSamples() - samplesRemaining, midGain, endGain);
 		}
 }

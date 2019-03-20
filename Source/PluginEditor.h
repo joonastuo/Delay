@@ -34,9 +34,26 @@ private:
 	AudioProcessorValueTreeState& mState;
 
 	typedef AudioProcessorValueTreeState::SliderAttachment SliderAttachment;
-	
+
+	// Delay time
 	Slider mTimeSlider;
+	Label  mTimeLabel;
 	std::unique_ptr<SliderAttachment> mTimeSliderAttachment;
+
+	// BL
+	Slider mBLSlider;
+	Label  mBLLabel;
+	std::unique_ptr<SliderAttachment> mBLSliderAttachment;
+
+	// Feed forward
+	Slider mFFSlider;
+	Label  mFFLabel;
+	std::unique_ptr<SliderAttachment> mFFSliderAttachment;
+
+	// Feedback
+	Slider mFBSlider;
+	Label  mFBLabel;
+	std::unique_ptr<SliderAttachment> mFBSliderAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DelayAudioProcessorEditor)
 };
