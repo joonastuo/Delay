@@ -23,7 +23,7 @@ public:
 private:
 	// Methods
 	void fillDelayBuffer(AudioBuffer<float>& buffer, const int& channel);
-	void copyFromDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const int& readPos);
+	void copyFromDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const int& readPos, const float& readFrac);
 	void feedbackDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const float& startGain, const float& endGain);
 
 

@@ -67,14 +67,20 @@ void DelayEffect::process(AudioBuffer<float>& buffer)
 	}
 
 	// delay index
-	int readIndex = mWriteIndex - static_cast<int> (time * (mSampleRate / 1000.f));
-	if (readIndex < 0)
-		readIndex += mDelayBufferLen;
+	float readPos = mWriteIndex - (time * (mSampleRate / 1000.f));
+	if (readPos < 0)
+		readPos += mDelayBufferLen;
+	
+	int readIndex = static_cast<int> (readPos);
+	float fracRatio = readPos - readIndex;
+	//int readIndex = mWriteIndex - static_cast<int> (time * (mSampleRate / 1000.f));
+	//if (readIndex < 0)
+	//	readIndex += mDelayBufferLen;
 
 	// Add delay into buffer
 	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
 	{
-		copyFromDelayBuffer(buffer, channel, readIndex);
+		copyFromDelayBuffer(buffer, channel, readIndex, fracRatio);
 	}
 
 	// Add feedback form output buffer to delay buffer with gain FB
@@ -118,18 +124,38 @@ void DelayEffect::fillDelayBuffer(AudioBuffer<float>& buffer, const int& channel
 }
 
 //==============================================================================
-void DelayEffect::copyFromDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const int& readIndex)
+void DelayEffect::copyFromDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const int& readIndex, const float& fracRatio)
 {
 		if (readIndex + buffer.getNumSamples() <= mDelayBufferLen)
 		{
-			buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), buffer.getNumSamples());
+			if (fracRatio == 0)
+				buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), buffer.getNumSamples());
+			else
+			{
+				// Fractal delay
+				buffer.copyFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), buffer.getNumSamples(), fracRatio, fracRatio);
+				buffer.addFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex - 1), buffer.getNumSamples(), 1 - fracRatio, 1 - fracRatio);
+			}
 		}
 		else
 		{
 			// Samples remaining at the end of the delay buffer
 			const int samplesRemaining = mDelayBufferLen - readIndex;
-			buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), samplesRemaining);
-			buffer.copyFrom(channel, samplesRemaining, mDelayBuffer.getReadPointer(channel), buffer.getNumSamples() - samplesRemaining);
+
+			if (fracRatio == 0)
+			{
+				buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), samplesRemaining);
+				buffer.copyFrom(channel, samplesRemaining, mDelayBuffer.getReadPointer(channel), buffer.getNumSamples() - samplesRemaining);
+			}
+			else
+			{
+				// Fractal delay
+				buffer.copyFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex - 1), samplesRemaining + 1, 1 - fracRatio, 1 - fracRatio);
+				buffer.addFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), samplesRemaining, fracRatio, fracRatio);
+
+				buffer.copyFromWithRamp(channel, samplesRemaining + 1, mDelayBuffer.getReadPointer(channel), buffer.getNumSamples() - samplesRemaining - 1, 1 - fracRatio, 1 - fracRatio);
+				buffer.addFromWithRamp(channel, samplesRemaining, mDelayBuffer.getReadPointer(channel), buffer.getNumSamples() - samplesRemaining, fracRatio, fracRatio);
+			}
 		}
 }
 
