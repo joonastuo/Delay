@@ -11,6 +11,8 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "Delay.h"
+#include "Identifiers.h"
 
 //==============================================================================
 /**
@@ -54,8 +56,12 @@ public:
     //==============================================================================
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+	AudioProcessorValueTreeState& getState();
 
 private:
+	AudioProcessorValueTreeState mState;
+	DelayEffect mDelay;
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DelayAudioProcessor)
 };
