@@ -12,6 +12,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Delay.h"
+#include "Identifiers.h"
 
 //==============================================================================
 /**

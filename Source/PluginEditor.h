@@ -12,6 +12,8 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
+#include "Identifiers.h"
+#include "KnobLookAndFeel.h"
 
 //==============================================================================
 /**
@@ -35,22 +37,26 @@ private:
 
 	typedef AudioProcessorValueTreeState::SliderAttachment SliderAttachment;
 
+	// Slider parameters
+	const int mSliderSize    = 80;
+	const int mLabelHeight   = 20;
+	const int mTextBoxHeight = 12;
+	const int mReductionSize = 20;
+	
+	// Look and feel
+	KnobLookAndFeel mKnobLookAndFeel;
+
 	// Delay time
-	Slider mTimeSlider;
-	Label  mTimeLabel;
+	Slider mDelaySlider;
+	Label  mDelayLabel;
 	std::unique_ptr<SliderAttachment> mTimeSliderAttachment;
 
-	// BL
-	Slider mBLSlider;
-	Label  mBLLabel;
-	std::unique_ptr<SliderAttachment> mBLSliderAttachment;
+	// Mix (wetness)
+	Slider mMixSlider;
+	Label  mMixLabel;
+	std::unique_ptr<SliderAttachment> mMixSliderAttachment;
 
-	// Feed forward
-	Slider mFFSlider;
-	Label  mFFLabel;
-	std::unique_ptr<SliderAttachment> mFFSliderAttachment;
-
-	// Feedback
+	// Feedback (gain)
 	Slider mFBSlider;
 	Label  mFBLabel;
 	std::unique_ptr<SliderAttachment> mFBSliderAttachment;

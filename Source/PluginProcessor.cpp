@@ -24,23 +24,18 @@ DelayAudioProcessor::DelayAudioProcessor()
                        ),
 	  mState(*this, nullptr, Identifier ("DelayPlugin"),
 		  {
-				std::make_unique<AudioParameterFloat> ("time",
+				std::make_unique<AudioParameterFloat> (IDs::time,
 													   "Time",
 													   0.0,
 													   2000.0,
 													   500.0),
-				std::make_unique<AudioParameterFloat> ("BL",
-													   "BL",
-													   0.0,
-													   2.0,
-													   0.1),
-				std::make_unique<AudioParameterFloat> ("FF",
-													   "FF",
+				std::make_unique<AudioParameterFloat> (IDs::wetness,
+													   "Mix",
 													   0.0,
 													   100.0,
 													   100.0),
-				std::make_unique<AudioParameterFloat> ("FB",
-													   "FB",
+				std::make_unique<AudioParameterFloat> (IDs::feedback,
+													   "Feedback",
 													   -100.0,
 													   100.0,
 													   0.0)
@@ -184,15 +179,18 @@ AudioProcessorEditor* DelayAudioProcessor::createEditor()
 //==============================================================================
 void DelayAudioProcessor::getStateInformation (MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+	auto state = mState.copyState();
+	std::unique_ptr<XmlElement> xml(state.createXml());
+	copyXmlToBinary(*xml, destData);
 }
 
 void DelayAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+	std::unique_ptr<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+
+	if (xmlState.get() != nullptr)
+		if (xmlState->hasTagName(mState.state.getType()))
+			mState.replaceState(ValueTree::fromXml(*xmlState));
 }
 
 AudioProcessorValueTreeState & DelayAudioProcessor::getState()

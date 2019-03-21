@@ -18,6 +18,10 @@
       <GROUP id="{EFC50161-F36D-5A47-CAEB-47FABDCFEC9A}" name="Helper">
         <FILE id="XWyHQ6" name="Identifiers.h" compile="0" resource="0" file="Source/Identifiers.h"/>
       </GROUP>
+      <GROUP id="{EB98CBEA-A550-471F-E778-0F00320E555C}" name="LookAndFeel">
+        <FILE id="vCQKBA" name="KnobLookAndFeel.h" compile="0" resource="0"
+              file="Source/KnobLookAndFeel.h"/>
+      </GROUP>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>

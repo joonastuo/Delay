@@ -45,9 +45,9 @@ void DelayEffect::reset()
 //==============================================================================
 void DelayEffect::process(AudioBuffer<float>& buffer)
 {
-	float feedback = *mState.getRawParameterValue("FB");
-	float wet	   = *mState.getRawParameterValue("FF");
-	float time	   = *mState.getRawParameterValue("time");
+	float feedback = *mState.getRawParameterValue(IDs::feedback);
+	float wet	   = *mState.getRawParameterValue(IDs::wetness);
+	float time	   = *mState.getRawParameterValue(IDs::time);
 
 	float FB = feedback / 100.f;
 	float W  = wet / 100.f;
@@ -73,10 +73,6 @@ void DelayEffect::process(AudioBuffer<float>& buffer)
 	
 	int readIndex = static_cast<int> (readPos);
 	float fracRatio = readPos - readIndex;
-	//int readIndex = mWriteIndex - static_cast<int> (time * (mSampleRate / 1000.f));
-	//if (readIndex < 0)
-	//	readIndex += mDelayBufferLen;
-
 	// Add delay into buffer
 	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
 	{
@@ -84,7 +80,7 @@ void DelayEffect::process(AudioBuffer<float>& buffer)
 	}
 
 	// Add feedback form output buffer to delay buffer with gain FB
-	for (auto channel = 0; channel < mNumChannels; ++channel)
+	for (auto channel = 0; channel < buffer.getNumChannels(); ++channel)
 	{
 		feedbackDelayBuffer(buffer, channel, mLastFB, FB);
 	}
@@ -126,37 +122,37 @@ void DelayEffect::fillDelayBuffer(AudioBuffer<float>& buffer, const int& channel
 //==============================================================================
 void DelayEffect::copyFromDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const int& readIndex, const float& fracRatio)
 {
-		if (readIndex + buffer.getNumSamples() <= mDelayBufferLen)
+	if (readIndex + buffer.getNumSamples() <= mDelayBufferLen)
+	{
+		if (fracRatio == 0)
+			buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), buffer.getNumSamples());
+		else
 		{
-			if (fracRatio == 0)
-				buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), buffer.getNumSamples());
-			else
-			{
-				// Fractal delay
-				buffer.copyFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), buffer.getNumSamples(), fracRatio, fracRatio);
-				buffer.addFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex - 1), buffer.getNumSamples(), 1 - fracRatio, 1 - fracRatio);
-			}
+			// Fractal delay
+			buffer.copyFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), buffer.getNumSamples(), fracRatio, fracRatio);
+			buffer.addFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex - 1), buffer.getNumSamples(), 1 - fracRatio, 1 - fracRatio);
+		}
+	}
+	else
+	{
+		// Samples remaining at the end of the delay buffer
+		const int samplesRemaining = mDelayBufferLen - readIndex;
+
+		if (fracRatio == 0)
+		{
+			buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), samplesRemaining);
+			buffer.copyFrom(channel, samplesRemaining, mDelayBuffer.getReadPointer(channel), buffer.getNumSamples() - samplesRemaining);
 		}
 		else
 		{
-			// Samples remaining at the end of the delay buffer
-			const int samplesRemaining = mDelayBufferLen - readIndex;
+			// Fractal delay
+			buffer.copyFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex - 1), samplesRemaining + 1, 1 - fracRatio, 1 - fracRatio);
+			buffer.addFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), samplesRemaining, fracRatio, fracRatio);
 
-			if (fracRatio == 0)
-			{
-				buffer.copyFrom(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), samplesRemaining);
-				buffer.copyFrom(channel, samplesRemaining, mDelayBuffer.getReadPointer(channel), buffer.getNumSamples() - samplesRemaining);
-			}
-			else
-			{
-				// Fractal delay
-				buffer.copyFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex - 1), samplesRemaining + 1, 1 - fracRatio, 1 - fracRatio);
-				buffer.addFromWithRamp(channel, 0, mDelayBuffer.getReadPointer(channel, readIndex), samplesRemaining, fracRatio, fracRatio);
-
-				buffer.copyFromWithRamp(channel, samplesRemaining + 1, mDelayBuffer.getReadPointer(channel), buffer.getNumSamples() - samplesRemaining - 1, 1 - fracRatio, 1 - fracRatio);
-				buffer.addFromWithRamp(channel, samplesRemaining, mDelayBuffer.getReadPointer(channel), buffer.getNumSamples() - samplesRemaining, fracRatio, fracRatio);
-			}
+			buffer.copyFromWithRamp(channel, samplesRemaining + 1, mDelayBuffer.getReadPointer(channel), buffer.getNumSamples() - samplesRemaining - 1, 1 - fracRatio, 1 - fracRatio);
+			buffer.addFromWithRamp(channel, samplesRemaining, mDelayBuffer.getReadPointer(channel), buffer.getNumSamples() - samplesRemaining, fracRatio, fracRatio);
 		}
+	}
 }
 
 //==============================================================================
@@ -164,16 +160,16 @@ void DelayEffect::copyFromDelayBuffer(AudioBuffer<float>& buffer, const int& cha
 //
 void DelayEffect::feedbackDelayBuffer(AudioBuffer<float>& buffer, const int & channel, const float & startGain, const float & endGain)
 {
-		if (mWriteIndex + buffer.getNumSamples() <= mDelayBufferLen)
-		{
-			mDelayBuffer.addFromWithRamp(channel, mWriteIndex, buffer.getWritePointer(channel), buffer.getNumSamples(), startGain, endGain);
-		}
-		else
-		{
-			// Samples remaining at the end of the delay buffer
-			const int samplesRemaining = mDelayBufferLen - mWriteIndex;
-			const float midGain = mLastFB + ((endGain - startGain) / mSamplesPerBlock) * (samplesRemaining / mSamplesPerBlock);
-			mDelayBuffer.addFromWithRamp(channel, mWriteIndex, buffer.getWritePointer(channel), samplesRemaining, startGain, midGain);
-			mDelayBuffer.addFromWithRamp(channel, 0, buffer.getWritePointer(channel, samplesRemaining), buffer.getNumSamples() - samplesRemaining, midGain, endGain);
-		}
+	if (mWriteIndex + buffer.getNumSamples() <= mDelayBufferLen)
+	{
+		mDelayBuffer.addFromWithRamp(channel, mWriteIndex, buffer.getWritePointer(channel), buffer.getNumSamples(), startGain, endGain);
+	}
+	else
+	{
+		// Samples remaining at the end of the delay buffer
+		const int samplesRemaining = mDelayBufferLen - mWriteIndex;
+		const float midGain = mLastFB + ((endGain - startGain) / mSamplesPerBlock) * (samplesRemaining / mSamplesPerBlock);
+		mDelayBuffer.addFromWithRamp(channel, mWriteIndex, buffer.getWritePointer(channel), samplesRemaining, startGain, midGain);
+		mDelayBuffer.addFromWithRamp(channel, 0, buffer.getWritePointer(channel, samplesRemaining), buffer.getNumSamples() - samplesRemaining, midGain, endGain);
+	}
 }

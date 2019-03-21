@@ -11,6 +11,7 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "Identifiers.h"
 
 class DelayEffect
 {
@@ -26,7 +27,6 @@ private:
 	void copyFromDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const int& readPos, const float& readFrac);
 	void feedbackDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const float& startGain, const float& endGain);
 
-
 	// Variables
 	AudioProcessorValueTreeState& mState;
 
@@ -41,5 +41,4 @@ private:
 	int mSamplesPerBlock = 512;
 	int mDelayBufferLen = 0;
 	int mNumChannels = 2;
-
 };

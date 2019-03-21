@@ -17,12 +17,18 @@ DelayAudioProcessorEditor::DelayAudioProcessorEditor (DelayAudioProcessor& p)
 	  processor (p),
 	  mState(p.getState())
 {
-    setSize (400, 200);
+	int windowWidth = 2 * mReductionSize + 2 * mSliderSize;
+	int windowHeight = 2 * mReductionSize + 2 * mSliderSize + 2 * mLabelHeight;
+    setSize (windowWidth, windowHeight);
 	initialiseGUI();
 }
 
 DelayAudioProcessorEditor::~DelayAudioProcessorEditor()
 {
+	// Empty destructor
+	mDelaySlider.setLookAndFeel(nullptr);
+	mFBSlider.setLookAndFeel(nullptr);
+	mMixSlider.setLookAndFeel(nullptr);
 }
 
 //==============================================================================
@@ -32,6 +38,7 @@ void DelayAudioProcessorEditor::paint (Graphics& g)
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
 }
 
+//==============================================================================
 void DelayAudioProcessorEditor::resized()
 {
 	// WETNESS ===========================
@@ -41,8 +48,8 @@ void DelayAudioProcessorEditor::resized()
 	wetBox.flexDirection = FlexBox::Direction::column;
 	wetBox.items.addArray(
 		{
-		FlexItem(mFFLabel).withWidth(100.f).withHeight(20.f),
-		FlexItem(mFFSlider).withWidth(100.f).withHeight(100.f)
+		FlexItem(mMixLabel).withWidth(mSliderSize).withHeight(mLabelHeight),
+		FlexItem(mMixSlider).withWidth(mSliderSize).withHeight(mSliderSize)
 		});
 
 	// DELAY TIME ========================
@@ -52,8 +59,8 @@ void DelayAudioProcessorEditor::resized()
 	delayBox.flexDirection = FlexBox::Direction::column;
 	delayBox.items.addArray(
 		{
-		FlexItem(mTimeLabel).withWidth(100.f).withHeight(20.f),
-		FlexItem(mTimeSlider).withWidth(100.f).withHeight(100.f)
+		FlexItem(mDelayLabel).withWidth(mSliderSize).withHeight(mLabelHeight),
+		FlexItem(mDelaySlider).withWidth(mSliderSize).withHeight(mSliderSize)
 		});
 
 	// FEEDBACK ===========================
@@ -63,75 +70,85 @@ void DelayAudioProcessorEditor::resized()
 	feedbackBox.flexDirection = FlexBox::Direction::column;
 	feedbackBox.items.addArray(
 		{
-		FlexItem(mFBLabel).withWidth(100.f).withHeight(20.f),
-		FlexItem(mFBSlider).withWidth(100.f).withHeight(100.f)
+		FlexItem(mFBLabel).withWidth(mSliderSize).withHeight(mLabelHeight),
+		FlexItem(mFBSlider).withWidth(mSliderSize).withHeight(mSliderSize)
+		});
+
+	// DELAY + FEEDBACK ===================
+	FlexBox firstBox;
+	firstBox.alignContent = FlexBox::AlignContent::center;
+	firstBox.justifyContent = FlexBox::JustifyContent::center;
+	firstBox.flexDirection = FlexBox::Direction::row;
+	firstBox.items.addArray(
+		{
+		FlexItem(delayBox).withWidth(mSliderSize).withHeight(mSliderSize + mLabelHeight),
+		FlexItem(feedbackBox).withWidth(mSliderSize).withHeight(mSliderSize + mLabelHeight)
 		});
 
 	// MASTER =============================
 	FlexBox masterBox;
 	masterBox.alignContent = FlexBox::AlignContent::center;
-	masterBox.justifyContent = FlexBox::JustifyContent::spaceBetween;
-	masterBox.flexDirection = FlexBox::Direction::row;
+	masterBox.justifyContent = FlexBox::JustifyContent::flexStart;
+	masterBox.flexDirection = FlexBox::Direction::column;
 	masterBox.items.addArray({
-			FlexItem(wetBox).withWidth(100.f).withHeight(120.f),
-			FlexItem(delayBox).withWidth(100.f).withHeight(120.f),
-			FlexItem(feedbackBox).withWidth(100.f).withHeight(120.f)
+			FlexItem(firstBox).withWidth(2.f * mSliderSize).withHeight(mSliderSize + mLabelHeight),
+			FlexItem(wetBox).withWidth(2.f * mSliderSize).withHeight(mSliderSize + mLabelHeight)
 		});
 
-	masterBox.performLayout(getLocalBounds().reduced(20, 10).toFloat());
+	masterBox.performLayout(getLocalBounds().reduced(mReductionSize, mReductionSize).toFloat());
 }
 
+//==============================================================================
 void DelayAudioProcessorEditor::initialiseGUI()
 {
 	// DELAY TIME ==============================
 	// Slider
-	mTimeSlider.setSliderStyle(Slider::SliderStyle::Rotary);
-	mTimeSlider.setSize(100, 100);
-	mTimeSlider.setTextBoxStyle(Slider::TextBoxBelow, true, 100, 20);
-	mTimeSliderAttachment.reset(new SliderAttachment(mState, "time", mTimeSlider));
-	addAndMakeVisible(mTimeSlider);
+	mDelaySlider.setSliderStyle(Slider::SliderStyle::Rotary);
+	mDelaySlider.setSize(mSliderSize, mSliderSize);
+	mDelaySlider.setTextBoxStyle(Slider::NoTextBox, true, mSliderSize, mTextBoxHeight);
+	mTimeSliderAttachment.reset(new SliderAttachment(mState, IDs::time, mDelaySlider));
+	addAndMakeVisible(mDelaySlider);
+	mDelaySlider.setLookAndFeel(&mKnobLookAndFeel);
+	mDelaySlider.setTextValueSuffix(" ms");
 
 	// Label
-	mTimeLabel.setText("Delay", dontSendNotification);
-	mTimeLabel.setSize(100, 20);
-	mTimeLabel.setFont(20);
-	addAndMakeVisible(mTimeLabel);
+	mDelayLabel.setText("Delay", dontSendNotification);
+	mDelayLabel.setSize(mSliderSize, mLabelHeight);
+	mDelayLabel.setFont(mLabelHeight);
+	mDelayLabel.setJustificationType(Justification::centred);
+	addAndMakeVisible(mDelayLabel);
 	
-	//// BL = =====================================
-	//// Slider
-	//mBLSlider.setSliderStyle(Slider::SliderStyle::Rotary);
-	//mBLSlider.setSize(100, 100);
-	//mBLSlider.setTextBoxStyle(Slider::TextBoxBelow, true, 100, 20);
-	//mBLSliderAttachment.reset(new SliderAttachment(mState, "BL", mBLSlider));
-	//addAndMakeVisible(mBLSlider);
-
-	//// Label
-	//mBLLabel.setText("BL", dontSendNotification);
-	//addAndMakeVisible(mBLLabel);
-
-	// FF = =====================================
-	mFFSlider.setSliderStyle(Slider::SliderStyle::Rotary);
-	mFFSlider.setSize(100, 100);
-	mFFSlider.setTextBoxStyle(Slider::TextBoxBelow, true, 100, 20);
-	mFFSliderAttachment.reset(new SliderAttachment(mState, "FF", mFFSlider));
-	addAndMakeVisible(mFFSlider);
+	// MIX =====================================
+	//Slider
+	mMixSlider.setSliderStyle(Slider::SliderStyle::Rotary);
+	mMixSlider.setSize(mSliderSize, mSliderSize);
+	mMixSlider.setTextBoxStyle(Slider::NoTextBox, true, mSliderSize, mTextBoxHeight);
+	mMixSliderAttachment.reset(new SliderAttachment(mState, IDs::wetness, mMixSlider));
+	addAndMakeVisible(mMixSlider);
+	mMixSlider.setLookAndFeel(&mKnobLookAndFeel);
+	mMixSlider.setTextValueSuffix(" %");
 
 	// Label
-	mFFLabel.setText("Dry/Wet", dontSendNotification);
-	mFFLabel.setSize(100, 20);
-	mFFLabel.setFont(20);
-	addAndMakeVisible(mFFLabel);
+	mMixLabel.setText("Mix", dontSendNotification);
+	mMixLabel.setSize(mSliderSize, mLabelHeight);
+	mMixLabel.setFont(mLabelHeight);
+	mMixLabel.setJustificationType(Justification::centred);
+	addAndMakeVisible(mMixLabel);
 
-	// FB = =====================================
+	// FEEDBACK===================================
+	// Slider
 	mFBSlider.setSliderStyle(Slider::SliderStyle::Rotary);
-	mFBSlider.setSize(100, 100);
-	mFBSlider.setTextBoxStyle(Slider::TextBoxBelow, true, 100, 20);
-	mFBSliderAttachment.reset(new SliderAttachment(mState, "FB", mFBSlider));
+	mFBSlider.setSize(mSliderSize, mSliderSize);
+	mFBSlider.setTextBoxStyle(Slider::NoTextBox, true, mSliderSize, mTextBoxHeight);
+	mFBSliderAttachment.reset(new SliderAttachment(mState, IDs::feedback, mFBSlider));
 	addAndMakeVisible(mFBSlider);
+	mFBSlider.setLookAndFeel(&mKnobLookAndFeel);
+	mFBSlider.setTextValueSuffix(" %");
 
 	// Label
 	mFBLabel.setText("Feedback", dontSendNotification);
-	mFBLabel.setSize(100, 20);
-	mFBLabel.setFont(20);
+	mFBLabel.setSize(mSliderSize, mLabelHeight);
+	mFBLabel.setFont(mLabelHeight);
+	mFBLabel.setJustificationType(Justification::centred);
 	addAndMakeVisible(mFBLabel);
 }
