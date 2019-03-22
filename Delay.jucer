@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="X2HUXV" name="Delay" projectType="audioplug" jucerVersion="5.3.2">
+<JUCERPROJECT id="X2HUXV" name="Delay" projectType="audioplug" jucerVersion="5.4.3"
+              pluginFormats="buildStandalone,buildVST">
   <MAINGROUP id="WxDnsk" name="Delay">
     <GROUP id="{92A7FE45-484E-8F59-C2DD-20637429273A}" name="Source">
       <FILE id="ut5AJF" name="PluginProcessor.cpp" compile="1" resource="0"
@@ -10,6 +11,20 @@
       <FILE id="Z29vwc" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="rUwcxV" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <GROUP id="{99233D42-E97D-5D50-2482-AD24D157CA59}" name="AudioDSP">
+        <FILE id="kOqKBv" name="Delay.cpp" compile="1" resource="0" file="Source/Delay.cpp"/>
+        <FILE id="JRRsKy" name="Delay.h" compile="0" resource="0" file="Source/Delay.h"/>
+        <FILE id="qfzjfg" name="DelayLine.h" compile="0" resource="0" file="Source/DelayLine.h"/>
+        <FILE id="vm7ga1" name="LFO.cpp" compile="1" resource="0" file="Source/LFO.cpp"/>
+        <FILE id="h7hT2N" name="LFO.h" compile="0" resource="0" file="Source/LFO.h"/>
+      </GROUP>
+      <GROUP id="{EFC50161-F36D-5A47-CAEB-47FABDCFEC9A}" name="Helper">
+        <FILE id="XWyHQ6" name="Identifiers.h" compile="0" resource="0" file="Source/Identifiers.h"/>
+      </GROUP>
+      <GROUP id="{EB98CBEA-A550-471F-E778-0F00320E555C}" name="LookAndFeel">
+        <FILE id="vCQKBA" name="KnobLookAndFeel.h" compile="0" resource="0"
+              file="Source/KnobLookAndFeel.h"/>
+      </GROUP>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
@@ -34,6 +49,7 @@
         <MODULEPATH id="juce_audio_processors" path="../../JUCE/modules"/>
         <MODULEPATH id="juce_audio_plugin_client" path="../../JUCE/modules"/>
         <MODULEPATH id="juce_audio_utils" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="../../JUCE/modules"/>
       </MODULEPATHS>
     </VS2017>
   </EXPORTFORMATS>
@@ -48,6 +64,7 @@
     <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_cryptography" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
