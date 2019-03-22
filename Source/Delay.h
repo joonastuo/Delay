@@ -12,6 +12,9 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Identifiers.h"
+#include "LFO.h"
+#include "DelayLine.h"
+
 
 class DelayEffect
 {
@@ -23,20 +26,18 @@ public:
 	void process(AudioBuffer<float>& buffer);
 private:
 	// Methods
-	void fillDelayBuffer(AudioBuffer<float>& buffer, const int& channel);
-	void copyFromDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const int& readPos, const float& readFrac);
-	void feedbackDelayBuffer(AudioBuffer<float>& buffer, const int& channel, const float& startGain, const float& endGain);
+	float linearInterp(const float& y0, const float& yp1, const float& frac);
 
 	// Variables
 	AudioProcessorValueTreeState& mState;
 
-	AudioBuffer<float> mDelayBuffer;
-	AudioBuffer<float> mDryBuffer;
-	// Write position of delay buffer
-	int mWriteIndex = 0;
-	float mLastG = 0.f;
-	float mLastW = 0.f;
-	float mLastFB = 0.f;
+	std::array<DelayLine<float>, 2> delayLines;
+	std::array<SmoothedValue<float>, 2> mSmoothG;
+	std::array<SmoothedValue<float>, 2> mSmoothW;
+	std::array<SmoothedValue<float>, 2> mSmoothFB;
+
+	float mLastTime = 0.f;
+
 	double mSampleRate = 44100.f;
 	int mSamplesPerBlock = 512;
 	int mDelayBufferLen = 0;

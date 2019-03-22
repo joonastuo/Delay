@@ -36,8 +36,8 @@ DelayAudioProcessor::DelayAudioProcessor()
 													   100.0),
 				std::make_unique<AudioParameterFloat> (IDs::feedback,
 													   "Feedback",
-													   -100.0,
-													   100.0,
+													   -99.0,
+													   99.0,
 													   0.0)
 		  }),
 	  mDelay(mState)
