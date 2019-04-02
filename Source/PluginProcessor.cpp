@@ -31,14 +31,22 @@ DelayAudioProcessor::DelayAudioProcessor()
 													   500.0),
 				std::make_unique<AudioParameterFloat> (IDs::wetness,
 													   "Mix",
-													   0.0,
-													   100.0,
-													   100.0),
+													   NormalisableRange<float>(0.00, 1.0),
+													   0.5,
+													   String(),
+													   AudioProcessorParameter::genericParameter,
+													   [](float value, int maxStringLength) {return static_cast<String>(round(value * 100.f * 100.f) / 100.f); },
+													   [](const String& text) {return text.getFloatValue() / 100.f; }
+													   ),
 				std::make_unique<AudioParameterFloat> (IDs::feedback,
 													   "Feedback",
-													   -99.0,
-													   99.0,
-													   0.0)
+													   NormalisableRange<float>(-0.99, 0.99),
+													   0.0,
+													   String(),
+													   AudioProcessorParameter::genericParameter,
+													   [](float value, int maxStringLength) {return static_cast<String>(round(value * 100.f * 100.f) / 100.f); },
+													   [](const String& text) {return text.getFloatValue() / 100.f; }
+													   )
 		  }),
 	  mDelay(mState)
 #endif

@@ -22,22 +22,24 @@ public:
 	DelayEffect(AudioProcessorValueTreeState& state);
 	~DelayEffect();
 	void prepare(dsp::ProcessSpec spec);
-	void reset();
 	void process(AudioBuffer<float>& buffer);
 private:
+	void update();
+	float getFeedback();
+	float getWetness();
+	float getTime();
 	// Methods
 	float linearInterp(const float& y0, const float& yp1, const float& frac);
 
 	// Variables
 	AudioProcessorValueTreeState& mState;
-
-	std::array<DelayLine<float>, 2> delayLines;
+	// Delay lines for right and left channel (stereo)
+	std::array<DelayLine	<float>, 2> mDelayLines;
 	std::array<SmoothedValue<float>, 2> mSmoothG;
 	std::array<SmoothedValue<float>, 2> mSmoothW;
 	std::array<SmoothedValue<float>, 2> mSmoothFB;
 
 	float mLastTime = 0.f;
-
 	double mSampleRate = 44100.f;
 	int mSamplesPerBlock = 512;
 	int mDelayBufferLen = 0;
