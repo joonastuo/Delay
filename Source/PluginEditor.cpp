@@ -17,8 +17,8 @@ DelayAudioProcessorEditor::DelayAudioProcessorEditor (DelayAudioProcessor& p)
 	  processor (p),
 	  mState(p.getState())
 {
-	int windowWidth = 2 * mReductionSize + 2 * mSliderSize;
-	int windowHeight = 2 * mReductionSize + 2 * mSliderSize + 2 * mLabelHeight;
+	int windowWidth  = 2 * mReductionSize + 2 * mSliderSize + mControlPanelSpaceW;
+	int windowHeight = 2 * mReductionSize + 2 * mSliderSize + 2 * mLabelHeight + mTitleHeight + mSpaceBetween + mControlPanelSpaceH;
     setSize (windowWidth, windowHeight);
 	initialiseGUI();
 }
@@ -27,15 +27,44 @@ DelayAudioProcessorEditor::~DelayAudioProcessorEditor()
 {
 	// Empty destructor
 	mDelaySlider.setLookAndFeel(nullptr);
-	mFBSlider.setLookAndFeel(nullptr);
-	mMixSlider.setLookAndFeel(nullptr);
+	mFBSlider   .setLookAndFeel(nullptr);
+	mMixSlider  .setLookAndFeel(nullptr);
 }
 
 //==============================================================================
 void DelayAudioProcessorEditor::paint (Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
+	Colour bgColour = getLookAndFeel().findColour(ResizableWindow::backgroundColourId);
+    g.fillAll (bgColour);
+
+	auto area = getLocalBounds().reduced(mReductionSize / 2.f, mReductionSize / 2.f);
+	auto titleArea = area.removeFromBottom(mTitleHeight);
+	drawTitle(g, titleArea.toFloat());
+}
+
+//==============================================================================
+void DelayAudioProcessorEditor::drawTitle(Graphics & g, Rectangle<float> area)
+{
+	Colour bgColour = getLookAndFeel().findColour(ResizableWindow::backgroundColourId);
+
+	Path textPath;
+	GlyphArrangement glyphs;
+	float x = area.getX(); ;
+	float y = area.getY();
+	float w = area.getWidth();
+	float h = area.getHeight();
+
+	glyphs.addFittedText(mTitleFont, mTitleText, x, y - 3.f, w, h, Justification::centred, 1);
+	glyphs.createPath(textPath);
+
+	g.setColour(bgColour);
+	auto textBounds = textPath.getBounds().expanded(8.f, 8.f);
+	g.setColour(bgColour.darker(.4));
+	g.fillRoundedRectangle(textBounds.toFloat(), 18.f);
+
+	g.setColour(juce::Colours::white);
+	PathStrokeType strokeType(2.5f);
+	g.fillPath(textPath);
 }
 
 //==============================================================================
@@ -48,7 +77,7 @@ void DelayAudioProcessorEditor::resized()
 	wetBox.flexDirection = FlexBox::Direction::column;
 	wetBox.items.addArray(
 		{
-		FlexItem(mMixLabel).withWidth(mSliderSize).withHeight(mLabelHeight),
+		FlexItem(mMixLabel) .withWidth(mSliderSize).withHeight(mLabelHeight),
 		FlexItem(mMixSlider).withWidth(mSliderSize).withHeight(mSliderSize)
 		});
 
@@ -59,7 +88,7 @@ void DelayAudioProcessorEditor::resized()
 	delayBox.flexDirection = FlexBox::Direction::column;
 	delayBox.items.addArray(
 		{
-		FlexItem(mDelayLabel).withWidth(mSliderSize).withHeight(mLabelHeight),
+		FlexItem(mDelayLabel) .withWidth(mSliderSize).withHeight(mLabelHeight),
 		FlexItem(mDelaySlider).withWidth(mSliderSize).withHeight(mSliderSize)
 		});
 
@@ -70,32 +99,37 @@ void DelayAudioProcessorEditor::resized()
 	feedbackBox.flexDirection = FlexBox::Direction::column;
 	feedbackBox.items.addArray(
 		{
-		FlexItem(mFBLabel).withWidth(mSliderSize).withHeight(mLabelHeight),
+		FlexItem(mFBLabel) .withWidth(mSliderSize).withHeight(mLabelHeight),
 		FlexItem(mFBSlider).withWidth(mSliderSize).withHeight(mSliderSize)
 		});
 
 	// DELAY + FEEDBACK ===================
 	FlexBox firstBox;
-	firstBox.alignContent = FlexBox::AlignContent::center;
-	firstBox.justifyContent = FlexBox::JustifyContent::center;
+	firstBox.alignContent = FlexBox::AlignContent::spaceBetween;
+	firstBox.justifyContent = FlexBox::JustifyContent::spaceBetween;
 	firstBox.flexDirection = FlexBox::Direction::row;
 	firstBox.items.addArray(
 		{
-		FlexItem(delayBox).withWidth(mSliderSize).withHeight(mSliderSize + mLabelHeight),
-		FlexItem(feedbackBox).withWidth(mSliderSize).withHeight(mSliderSize + mLabelHeight)
+		FlexItem(delayBox)   .withWidth(mSliderSize + (mControlPanelSpaceW / 2.f)).withHeight(mSliderSize + mLabelHeight),
+		FlexItem(feedbackBox).withWidth(mSliderSize + (mControlPanelSpaceW / 2.f)).withHeight(mSliderSize + mLabelHeight)
 		});
 
 	// MASTER =============================
+	float masterItemWidth = (2.f * mSliderSize) + mControlPanelSpaceW;
+	float masterItemHeight = mSliderSize + mLabelHeight + mControlPanelSpaceH / 2.f;
+
 	FlexBox masterBox;
-	masterBox.alignContent = FlexBox::AlignContent::center;
-	masterBox.justifyContent = FlexBox::JustifyContent::flexStart;
+	masterBox.alignContent = FlexBox::AlignContent::spaceBetween;
+	masterBox.justifyContent = FlexBox::JustifyContent::spaceBetween;
 	masterBox.flexDirection = FlexBox::Direction::column;
 	masterBox.items.addArray({
-			FlexItem(firstBox).withWidth(2.f * mSliderSize).withHeight(mSliderSize + mLabelHeight),
-			FlexItem(wetBox).withWidth(2.f * mSliderSize).withHeight(mSliderSize + mLabelHeight)
+			FlexItem(firstBox).withWidth(masterItemWidth).withHeight(masterItemHeight),
+			FlexItem(wetBox)  .withWidth(masterItemWidth).withHeight(masterItemHeight)
 		});
 
-	masterBox.performLayout(getLocalBounds().reduced(mReductionSize, mReductionSize).toFloat());
+	auto area = getLocalBounds().reduced(mReductionSize, mReductionSize);
+	area.removeFromBottom(mTitleHeight + mSpaceBetween);
+	masterBox.performLayout(area.toFloat());
 }
 
 //==============================================================================
@@ -105,7 +139,7 @@ void DelayAudioProcessorEditor::initialiseGUI()
 	// Slider
 	mDelaySlider.setSliderStyle(Slider::SliderStyle::Rotary);
 	mDelaySlider.setSize(mSliderSize, mSliderSize);
-	mDelaySlider.setTextBoxStyle(Slider::NoTextBox, true, mSliderSize, mTextBoxHeight);
+	mDelaySlider.setTextBoxStyle(Slider::TextBoxBelow, false, mSliderSize, mTextBoxHeight);
 	mTimeSliderAttachment.reset(new SliderAttachment(mState, IDs::time, mDelaySlider));
 	addAndMakeVisible(mDelaySlider);
 	mDelaySlider.setLookAndFeel(&mKnobLookAndFeel);
@@ -122,7 +156,7 @@ void DelayAudioProcessorEditor::initialiseGUI()
 	//Slider
 	mMixSlider.setSliderStyle(Slider::SliderStyle::Rotary);
 	mMixSlider.setSize(mSliderSize, mSliderSize);
-	mMixSlider.setTextBoxStyle(Slider::NoTextBox, true, mSliderSize, mTextBoxHeight);
+	mMixSlider.setTextBoxStyle(Slider::TextBoxBelow, false, mSliderSize, mTextBoxHeight);
 	mMixSliderAttachment.reset(new SliderAttachment(mState, IDs::wetness, mMixSlider));
 	addAndMakeVisible(mMixSlider);
 	mMixSlider.setLookAndFeel(&mKnobLookAndFeel);
@@ -139,7 +173,7 @@ void DelayAudioProcessorEditor::initialiseGUI()
 	// Slider
 	mFBSlider.setSliderStyle(Slider::SliderStyle::Rotary);
 	mFBSlider.setSize(mSliderSize, mSliderSize);
-	mFBSlider.setTextBoxStyle(Slider::NoTextBox, true, mSliderSize, mTextBoxHeight);
+	mFBSlider.setTextBoxStyle(Slider::TextBoxBelow, false, mSliderSize, mTextBoxHeight);
 	mFBSliderAttachment.reset(new SliderAttachment(mState, IDs::feedback, mFBSlider));
 	addAndMakeVisible(mFBSlider);
 	mFBSlider.setLookAndFeel(&mKnobLookAndFeel);

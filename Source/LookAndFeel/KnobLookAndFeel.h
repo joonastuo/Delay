@@ -17,11 +17,10 @@ public:
 		const float rotaryStartAngle, const float rotaryEndAngle, Slider& slider) override
 	{
 		// Radius of knob
-		auto radius = jmin(width / 2, height / 2) - 10.0f;
-		radius *= 0.8f;
+		auto radius = jmin(width / 2, height / 2) - 5.0f;
 		// Centre point (centreX, centreY) of knob
 		auto centreX = x + width * 0.5f;
-		auto centreY = y + height * 0.5f;
+		auto centreY = y + radius + 12.f;
 
 		auto rx = centreX - radius;
 		auto ry = centreY - radius;
@@ -48,16 +47,18 @@ public:
 		auto pointerThickness = 3.0f;
 		p.addRectangle(-pointerThickness * 0.5f, -radius, pointerThickness, pointerLength);
 		p.applyTransform(AffineTransform::rotation(angle).translated(centreX, centreY));
-		g.setColour(Colours::white);
 		g.fillPath(p);
+	}
 
-		// Draw slider value
-		g.setFont(12);
-		String value = "";
-		if (slider.getValue() > 1000)
-			value = static_cast<String> (round(slider.getValue() / 10.f) / 100.f) + " s";
-		else
-			value = static_cast<String> (round(slider.getValue() * 100.f) / 100.f);
-		g.drawFittedText(value + (slider.getValue() < 1000 ? slider.getTextValueSuffix() : ""), centreX - 30.f, height - 10.f, 60.f, 10.f, Justification::centred, 1);
+	// Slider textbox
+	void drawLabel(Graphics& g, Label& label) override
+	{
+		g.setColour(Colours::white);
+
+		String text = label.getText();
+		int width = label.getWidth();
+		int height = label.getHeight();
+		g.setFont(Font(height - 2, Font::plain));
+		g.drawFittedText(text, 0, 0, width, height, Justification::centred, 1);
 	}
 };
