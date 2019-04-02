@@ -11,8 +11,8 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "Delay.h"
-#include "Identifiers.h"
+#include "AudioDSP/Delay.h"
+#include "Helper/Identifiers.h"
 
 //==============================================================================
 /**

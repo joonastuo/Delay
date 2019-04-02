@@ -12,8 +12,8 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
-#include "Identifiers.h"
-#include "KnobLookAndFeel.h"
+#include "Helper/Identifiers.h"
+#include "LookAndFeel/KnobLookAndFeel.h"
 
 //==============================================================================
 /**
@@ -26,6 +26,7 @@ public:
 
     //==============================================================================
     void paint (Graphics&) override;
+	void drawTitle(Graphics& g, Rectangle<float> area);
     void resized() override;
 	void initialiseGUI();
 
@@ -40,9 +41,16 @@ private:
 	// Slider parameters
 	const int mSliderSize    = 80;
 	const int mLabelHeight   = 20;
-	const int mTextBoxHeight = 12;
-	const int mReductionSize = 20;
+	const int mTextBoxHeight = 14;
+	const int mReductionSize = 10;
+	const int mTitleHeight   = 50;
+	const int mSpaceBetween  = 10;
+	const float mControlPanelSpaceW = 40.f;
+	const float mControlPanelSpaceH = 10.f;
 	
+	String mTitleText = "Delay";
+	Font mTitleFont = Font(30, Font::bold);
+
 	// Look and feel
 	KnobLookAndFeel mKnobLookAndFeel;
 
